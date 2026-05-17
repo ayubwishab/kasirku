@@ -3,29 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Kasir Konter</title>
-    <!-- Tailwind CSS CDN untuk UI cepat dan responsif di HP -->
+    <title>Dashboard Kasir Konter v2</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style>
-        /* Gaya khusus saat cetak struk */
-        @media print {
-            body * { visibility: hidden; }
-            #struk-cetak, #struk-cetak * { visibility: visible; }
-            #struk-cetak { position: absolute; left: 0; top: 0; width: 58mm; }
-        }
-    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased pb-12">
 
-    <!-- Top Navigation -->
     <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
-        <h1 class="text-xl font-bold tracking-wide">KonterKu - Kasir v1.0</h1>
+        <h1 class="text-xl font-bold tracking-wide">Arstore - Kasir</h1>
         <button onclick="resetData()" class="bg-red-500 hover:bg-red-600 text-xs px-3 py-1.5 rounded font-semibold transition">Reset Data</button>
     </header>
 
     <main class="max-w-md mx-auto p-4 space-y-6">
         
-        <!-- RINGKASAN DASHBOARD -->
         <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
             <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400">Rekap Pendapatan Hari Ini</h2>
             <div class="grid grid-cols-2 gap-4">
@@ -40,89 +30,103 @@
             </div>
         </section>
 
-        <!-- FORM INPUT TRANSAKSI -->
         <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-            <h2 class="text-sm font-bold text-gray-700 flex items-center gap-2">
-                <span>➕ Input Transaksi Baru</span>
-            </h2>
-            <form id="form-transaksi" onsubmit="simpanTransaksi(event)" class="space-y-3">
+            <h2 class="text-sm font-bold text-gray-700">➕ Input Transaksi & Token PLN</h2>
+            <form id="form-transaksi" onsubmit="prosesTransaksi(event)" class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 mb-1">Nama Produk / Layanan</label>
-                    <input type="text" id="produk" placeholder="Contoh: Tsel 10k, Voucher XL, Token 50k" required class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <input type="text" id="produk" placeholder="Contoh: PLN PROMO 50rb, Tsel 10k" required class="w-full p-3 border border-gray-200 rounded-xl text-sm">
                 </div>
+                
+                <div class="bg-gray-50 p-3 rounded-xl space-y-2 border border-gray-200">
+                    <p class="text-xs font-bold text-gray-500">Info Token PLN (Kosongkan jika pulsa biasa)</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="id-pln" placeholder="ID PLN / No Meter" class="w-full p-2 border border-gray-200 rounded-lg text-xs">
+                        <input type="text" id="nama-pln" placeholder="Nama Pelanggan" class="w-full p-2 border border-gray-200 rounded-lg text-xs">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="daya-pln" placeholder="Tarif/Daya (R1/900VA)" class="w-full p-2 border border-gray-200 rounded-lg text-xs">
+                        <input type="text" id="kwh-pln" placeholder="Jumlah KWH (75,2 KWH)" class="w-full p-2 border border-gray-200 rounded-lg text-xs">
+                    </div>
+                    <input type="text" id="sn-token" placeholder="Nomor Token (1234-5678-...)" class="w-full p-2 border border-gray-200 rounded-lg text-xs">
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 mb-1">Harga Modal (Rp)</label>
-                        <input type="number" id="modal" placeholder="10200" required class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <input type="number" id="modal" placeholder="51200" required class="w-full p-3 border border-gray-200 rounded-xl text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 mb-1">Harga Jual (Rp)</label>
-                        <input type="number" id="jual" placeholder="12000" required class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <input type="number" id="jual" placeholder="55000" required class="w-full p-3 border border-gray-200 rounded-xl text-sm">
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded-xl shadow-lg transition active:scale-98 text-sm mt-2">
-                    Simpan & Cetak Struk
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded-xl shadow-lg text-sm mt-2">
+                    Simpan & Buat Gambar JPG
                 </button>
             </form>
         </section>
 
-        <!-- RIWAYAT PENJUALAN -->
         <section class="space-y-3">
             <h2 class="text-sm font-bold text-gray-600 px-1">Riwayat Transaksi Terakhir</h2>
             <div id="list-transaksi" class="space-y-2">
-                <!-- Data transaksi akan muncul di sini via JavaScript -->
                 <p class="text-center text-sm text-gray-400 py-4 bg-white rounded-2xl border border-dashed border-gray-200">Belum ada transaksi hari ini.</p>
             </div>
         </section>
 
     </main>
 
-    <!-- CONTAINER STRUK (Tersembunyi di HP, muncul pas dicetak) -->
-    <div id="struk-cetak" class="hidden bg-white text-black p-4 font-mono text-xs w-[58mm] leading-tight">
-        <div class="text-center font-bold uppercase mb-2">
-            === BERKAH CELL ===<br>
-            Nota Pembayaran
+    <div class="absolute top-[-9999px] left-[-9999px]">
+        <div id="struk-template" class="bg-white text-black p-6 font-mono text-sm w-[380px] leading-relaxed tracking-wide">
+            <div class="text-lg font-normal mb-1">Arstore</div>
+            <div id="st-waktu" class="text-xs text-gray-600 mb-6">16/05/2026 21:12:21</div>
+            
+            <div class="text-center font-bold text-base tracking-widest mb-6">STRUK PEMBELIAN TOKEN</div>
+            
+            <table class="w-full text-sm border-separate border-spacing-y-1">
+                <tr><td class="w-1/3">ID TRX</td><td>: <span id="st-idtrx"></span></td></tr>
+                <tr><td>PRODUK</td><td>: <span id="st-produk"></span></td></tr>
+                <tr id="row-id-pln"><td>ID PLN / S...</td><td>: <span id="st-idpln"></span></td></tr>
+                <tr id="row-nama"><td>NAMA</td><td>: <span id="st-nama"></span></td></tr>
+                <tr id="row-daya"><td>TARIF/DAYA</td><td>: <span id="st-daya"></span></td></tr>
+                <tr id="row-kwh"><td>JUMLAH DAYA</td><td>: <span id="st-kwh"></span></td></tr>
+                <tr id="row-sn"><td>SN/TOKEN</td><td>: <span id="st-sn"></span></td></tr>
+                <tr><td>HARGA</td><td>: <span id="st-harga"></span></td></tr>
+            </table>
+
+            <div id="box-token-besar" class="text-center my-6 hidden">
+                <p class="text-xs italic">*Stroom / Token*</p>
+                <p id="st-token-besar" class="text-base font-bold tracking-wider mt-1"></p>
+            </div>
+
+            <div class="text-center text-xs space-y-1 mt-8">
+                <p>Terima Kasih</p>
+                <p>Atas Kepercayaan Anda</p>
+                <p class="text-gray-500 italic text-[11px] pt-2">Ms wahyu</p>
+            </div>
         </div>
-        <p>Tgl: <span id="st-tanggal"></span></p>
-        <p>---------------------------</p>
-        <table class="w-full">
-            <tr>
-                <td id="st-produk">Produk</td>
-                <td id="st-harga" class="text-right">Rp 0</td>
-            </tr>
-        </table>
-        <p>---------------------------</p>
-        <div class="text-center font-bold mt-2">TOTAL: <span id="st-total">Rp 0</span></div>
-        <p class="text-center mt-4">Terima Kasih<br>Silakan Datang Kembali</p>
     </div>
 
-    <!-- LOGIKA JAVASCRIPT -->
     <script>
-        // Ambil data lama atau buat array kosong jika baru pertama buka
         let database = JSON.parse(localStorage.getItem('konter_data')) || [];
 
-        // Fungsi Format Rupiah
         function formatRupiah(angka) {
-            return 'Rp ' + parseInt(angka).toLocaleString('id-ID');
+            return parseInt(angka).toLocaleString('id-ID');
         }
 
-        // Fungsi Update Tampilan Dashboard & Tabel
         function perbaruiDashboard() {
             let totalOmzet = 0;
             let totalUntung = 0;
             const listContainer = document.getElementById('list-transaksi');
-            
             listContainer.innerHTML = '';
 
             if (database.length === 0) {
                 listContainer.innerHTML = `<p class="text-center text-sm text-gray-400 py-4 bg-white rounded-2xl border border-dashed border-gray-200">Belum ada transaksi hari ini.</p>`;
             } else {
-                // Balik urutan biar yang terbaru di atas
                 database.slice().reverse().forEach(item => {
                     totalOmzet += item.jual;
                     totalUntung += (item.jual - item.modal);
 
-                    // Buat card riwayat transaksi
                     listContainer.innerHTML += `
                         <div class="bg-white p-4 rounded-xl shadow-xs border border-gray-100 flex justify-between items-center">
                             <div>
@@ -130,64 +134,99 @@
                                 <p class="text-xs text-gray-400">${item.waktu}</p>
                             </div>
                             <div class="text-right">
-                                <p class="font-bold text-gray-900 text-sm">${formatRupiah(item.jual)}</p>
-                                <p class="text-xs text-green-600 font-medium">+${formatRupiah(item.jual - item.modal)}</p>
+                                <p class="font-bold text-gray-900 text-sm">Rp ${formatRupiah(item.jual)}</p>
+                                <p class="text-xs text-green-600 font-medium">+Rp ${formatRupiah(item.jual - item.modal)}</p>
                             </div>
                         </div>
                     `;
                 });
             }
-
-            document.getElementById('total-omzet').innerText = formatRupiah(totalOmzet);
-            document.getElementById('total-untung').innerText = formatRupiah(totalUntung);
+            document.getElementById('total-omzet').innerText = 'Rp ' + formatRupiah(totalOmzet);
+            document.getElementById('total-untung').innerText = 'Rp ' + formatRupiah(totalUntung);
         }
 
-        // Fungsi Simpan Transaksi Baru
-        function simpanTransaksi(event) {
+        function prosesTransaksi(event) {
             event.preventDefault();
 
             const nama = document.getElementById('produk').value;
             const modal = parseInt(document.getElementById('modal').value);
             const jual = parseInt(document.getElementById('jual').value);
             
+            // Mengambil info opsional PLN
+            const idPln = document.getElementById('id-pln').value;
+            const namaPln = document.getElementById('nama-pln').value;
+            const dayaPln = document.getElementById('daya-pln').value;
+            const kwhPln = document.getElementById('kwh-pln').value;
+            const snToken = document.getElementById('sn-token').value;
+
             const waktuSekarang = new Date();
-            const opsiWaktu = { hour: '2-digit', minute: '2-digit' };
-            const stringWaktu = waktuSekarang.toLocaleTimeString('id-ID', opsiWaktu) + ' WIB';
+            const stringWaktu = waktuSekarang.toLocaleDateString('id-ID') + ' ' + waktuSekarang.toLocaleTimeString('id-ID');
+            const idTrx = Math.floor(10000000 + Math.random() * 90000000);
 
-            const dataBaru = { nama, modal, jual, waktu: stringWaktu };
-            
-            // Simpan ke array & LocalStorage
-            database.push(dataBaru);
+            // 1. Simpan ke Database Lokal
+            database.push({ nama, modal, jual, waktu: stringWaktu });
             localStorage.setItem('konter_data', JSON.stringify(database));
+            perbaruiDashboard();
 
-            // Siapkan Data ke Template Struk
-            document.getElementById('st-tanggal').innerText = waktuSekarang.toLocaleDateString('id-ID') + ' ' + stringWaktu;
+            // 2. Tembak data ke Template Struk HTML
+            document.getElementById('st-waktu').innerText = stringWaktu;
+            document.getElementById('st-idtrx').innerText = idTrx;
             document.getElementById('st-produk').innerText = nama;
             document.getElementById('st-harga').innerText = formatRupiah(jual);
-            document.getElementById('st-total').innerText = formatRupiah(jual);
 
-            // Perbarui UI utama
-            perbaruiDashboard();
+            // Kondisional jika input PLN diisi, kalau kosong barisnya disembunyikan
+            toggleRow('row-id-pln', 'st-idpln', idPln);
+            toggleRow('row-nama', 'st-nama', namaPln);
+            toggleRow('row-daya', 'st-daya', dayaPln);
+            toggleRow('row-kwh', 'st-kwh', kwhPln);
+            toggleRow('row-sn', 'st-sn', snToken);
+
+            if(snToken) {
+                document.getElementById('box-token-besar').classList.remove('hidden');
+                document.getElementById('st-token-besar').innerText = snToken;
+            } else {
+                document.getElementById('box-token-besar').classList.add('hidden');
+            }
+
+            // 3. PROSES KONVERSI HTML KE JPG
+            const elementStruk = document.getElementById('struk-template');
             
-            // Reset form input
-            document.getElementById('form-transaksi').reset();
+            // Beri sedikit jeda agar browser selesai merender teks/layout
+            setTimeout(() => {
+                html2canvas(elementStruk, { scale: 2, useCORS: true }).then(canvas => {
+                    // Konversi canvas menjadi format Gambar JPG kualitas penuh
+                    const imageJPG = canvas.toDataURL("image/jpeg", 1.0);
+                    
+                    // Buat link download otomatis di HP
+                    const linkDownload = document.createElement('a');
+                    linkDownload.download = `Struk-${idTrx}.jpg`;
+                    linkDownload.href = imageJPG;
+                    linkDownload.click();
+                });
+            }, 300);
 
-            // Pemicu cetak print browser HP
-            window.print();
+            document.getElementById('form-transaksi').reset();
         }
 
-        // Fungsi Reset Semua Data Keuangan
+        function toggleRow(rowId, spanId, value) {
+            const row = document.getElementById(rowId);
+            if(value) {
+                row.classList.remove('hidden');
+                document.getElementById(spanId).innerText = value;
+            } else {
+                row.classList.add('hidden');
+            }
+        }
+
         function resetData() {
-            if (confirm('Apakah Anda yakin ingin menghapus semua rekap transaksi hari ini?')) {
+            if (confirm('Apakah Anda yakin ingin menghapus semua rekap transaksi?')) {
                 database = [];
                 localStorage.removeItem('konter_data');
                 perbaruiDashboard();
             }
         }
 
-        // Jalankan fungsi update saat web pertama kali dimuat
         perbaruiDashboard();
     </script>
 </body>
 </html>
-

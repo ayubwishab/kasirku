@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Kasir Konter v4</title>
+    <title>Dashboard Kasir Konter v5</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased pb-12">
@@ -39,7 +39,7 @@
                     </div>
                     
                     <div class="bg-gray-50 p-3 rounded-xl space-y-2 border border-gray-200">
-                        <p class="text-xs font-bold text-gray-500">Info Token PLN (Kosongkan jika pulsa biasa)</p>
+                        <p class="text-xs font-bold text-gray-500">Info Tambahan Struk (Opsional)</p>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="text" id="id-pln" placeholder="ID PLN / No Meter" class="w-full p-2 border border-gray-200 rounded-lg text-xs">
                             <input type="text" id="nama-pln" placeholder="Nama Pelanggan" class="w-full p-2 border border-gray-200 rounded-lg text-xs">
@@ -49,6 +49,10 @@
                             <input type="text" id="kwh-pln" placeholder="Jumlah KWH (75,2 KWH)" class="w-full p-2 border border-gray-200 rounded-lg text-xs">
                         </div>
                         <input type="text" id="sn-token" placeholder="Nomor Token (1234-5678-...)" class="w-full p-2 border border-gray-200 rounded-lg text-xs">
+                        
+                        <div class="pt-1">
+                            <input type="text" id="nama-kasir" placeholder="Nama Kasir / Petugas (Muncul di bawah)" class="w-full p-2 border border-blue-200 bg-blue-50/50 rounded-lg text-xs placeholder-blue-400">
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -119,7 +123,7 @@
             <div class="text-center text-xs space-y-1 mt-8">
                 <p>Terima Kasih</p>
                 <p>Atas Kepercayaan Anda</p>
-                <p class="text-gray-500 italic text-[11px] pt-2">Ms wahyu</p>
+                <p id="st-kasir" class="text-gray-500 italic text-[11px] pt-2"></p>
             </div>
         </div>
 
@@ -184,12 +188,14 @@
             const dayaPln = document.getElementById('daya-pln').value;
             const kwhPln = document.getElementById('kwh-pln').value;
             const snToken = document.getElementById('sn-token').value;
+            const namaKasir = document.getElementById('nama-kasir').value; // Ambil nilai nama kasir
 
             const waktuSekarang = new Date();
             const stringWaktu = waktuSekarang.toLocaleDateString('id-ID') + ' ' + waktuSekarang.toLocaleTimeString('id-ID');
             const idTrx = Math.floor(10000000 + Math.random() * 90000000);
 
-            database.push({ nama, modal, jual, waktu: stringWaktu, idTrx, idPln, namaPln, dayaPln, kwhPln, snToken });
+            // Simpan detail nama kasir ke database lokal
+            database.push({ nama, modal, jual, waktu: stringWaktu, idTrx, idPln, namaPln, dayaPln, kwhPln, snToken, namaKasir });
             localStorage.setItem('konter_data', JSON.stringify(database));
             
             perbaruiDashboard();
@@ -206,22 +212,34 @@
             document.getElementById('modal-opsi').classList.add('hidden');
         }
 
-        // FUNGSI BARU: Membuka Layar Struk Penuh agar Siap di-Screenshot
         function tampilkanLayarStruk() {
             if (!transaksiTerpilih) return;
             const item = transaksiTerpilih;
 
-            // Masukkan data transaksi ke template struk
             document.getElementById('st-waktu').innerText = item.waktu;
             document.getElementById('st-idtrx').innerText = item.idTrx || Math.floor(10000000 + Math.random() * 90000000);
             document.getElementById('st-produk').innerText = item.nama;
-            document.getElementById('st-harga').innerText = formatRupiah(item.jual) + '.000'; // Menyesuaikan format contoh .000
+            
+            // Format nominal harga agar memakai format kelipatan ribuan (.000) seperti contoh awal
+            if (item.jual.toString().endsWith('000')) {
+                document.getElementById('st-harga').innerText = formatRupiah(item.jual);
+            } else {
+                document.getElementById('st-harga').innerText = formatRupiah(item.jual);
+            }
 
             toggleRow('row-id-pln', 'st-idpln', item.idPln);
             toggleRow('row-nama', 'st-nama', item.namaPln);
             toggleRow('row-daya', 'st-daya', item.dayaPln);
             toggleRow('row-kwh', 'st-kwh', item.kwhPln);
             toggleRow('row-sn', 'st-sn', item.snToken);
+
+            // Menampilkan nama kasir secara dinamis di paling bawah jika diisi
+            if(item.namaKasir) {
+                document.getElementById('st-kasir').innerText = item.namaKasir;
+                document.getElementById('st-kasir').classList.remove('hidden');
+            } else {
+                document.getElementById('st-kasir').classList.add('hidden');
+            }
 
             if(item.snToken) {
                 document.getElementById('box-token-besar').classList.remove('hidden');
@@ -230,18 +248,15 @@
                 document.getElementById('box-token-besar').classList.add('hidden');
             }
 
-            // Sembunyikan dashboard, tampilkan halaman khusus struk
             document.getElementById('app-dashboard').classList.add('hidden');
             document.getElementById('modal-opsi').classList.add('hidden');
             document.getElementById('halaman-struk').classList.remove('hidden');
             document.getElementById('halaman-struk').classList.add('flex');
             
-            // Scroll otomatis ke paling atas layar
             window.scrollTo(0, 0);
         }
 
         function kembaliKeDashboard() {
-            // Sembunyikan halaman struk, munculkan dashboard kembali
             document.getElementById('halaman-struk').classList.add('hidden');
             document.getElementById('halaman-struk').classList.remove('flex');
             document.getElementById('app-dashboard').classList.remove('hidden');
